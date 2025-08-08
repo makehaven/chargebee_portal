@@ -1,0 +1,7 @@
+chargebee_portal.admin_config:
+  title: 'Chargebee Portal'
+  description: 'Configure the Chargebee Portal settings.'
+  parent: system.admin_config_services
+  route_name: chargebee_portal.settings
+  weight: 0
+  type: leaf

@@ -1,0 +1,5 @@
+chargebee_portal.settings:
+  route_name: chargebee_portal.settings
+  title: 'Settings'
+  base_route: chargebee_portal.settings
+

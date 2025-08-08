@@ -1,0 +1,167 @@
+<?php
+
+use Drupal\Core\Routing\TrustedRedirectResponse;
+use Drupal\user\Entity\User;
+use GuzzleHttp\Exception\RequestException;
+
+/**
+ * Redirect user to Chargebee payment portal or fallback URL.
+ */
+function chargebee_portal_payment_portal_redirect() {
+  // Disable caching for this page.
+  \Drupal::service('page_cache_kill_switch')->trigger();
+
+  // Log when the function is called.
+ // \Drupal::logger('chargebee_portal')->info('paymentPortalRedirect method called.');
+
+  // Load the current user and invalidate user cache.
+  $current_user = \Drupal::currentUser();
+  $account = User::load($current_user->id());
+  $chargebee_id = $account->get('field_user_chargebee_id')->value;
+
+  if (empty($chargebee_id)) {
+    // Redirect to fallback URL if Chargebee ID is not found.
+    $fallback_url = \Drupal::config('chargebee_portal.settings')->get('fallback_payment_redirect_url');
+    return new TrustedRedirectResponse($fallback_url, 302, [
+      'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+      'Pragma' => 'no-cache'
+    ]);
+  }
+
+  // Create a new portal session for each login.
+  $response = chargebee_portal_create_session($chargebee_id);
+
+  // Ensure successful session creation.
+  if ($response['success'] && isset($response['data']['access_url'])) {
+    // Log the new session ID and URL to verify it is new each time.
+    \Drupal::logger('chargebee_portal')->info('Redirecting to new Chargebee session: ID = ' . $response['data']['id'] . ', Access URL = ' . $response['data']['access_url']);
+    
+    // Redirect to Chargebee portal with the new session and token, with cache-control headers.
+    return new TrustedRedirectResponse($response['data']['access_url'], 302, [
+      'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+      'Pragma' => 'no-cache'
+    ]);
+  } else {
+    // Log error and redirect to fallback URL if session creation failed.
+    \Drupal::logger('chargebee_portal')->error('Failed to create Chargebee session for user ' . $current_user->id() . ': ' . $response['error_details']);
+    $fallback_url = \Drupal::config('chargebee_portal.settings')->get('fallback_payment_redirect_url');
+    return new TrustedRedirectResponse($fallback_url, 302, [
+      'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+      'Pragma' => 'no-cache'
+    ]);
+  }
+}
+
+
+
+/**
+ * Create a Chargebee portal session.
+ */
+function chargebee_portal_create_session($chargebee_id) {
+  // Retrieve the correct API URL and key from the configuration
+  $url = \Drupal::config('chargebee_portal.settings')->get('live_portal_url');
+  $api_key = \Drupal::config('chargebee_portal.settings')->get('live_api_key');
+
+  // Log the API URL and key to verify if they are being retrieved correctly
+ // \Drupal::logger('chargebee_portal')->info('Chargebee API URL: ' . ($url ? $url : 'NOT SET') . ', API Key: ' . ($api_key ? $api_key : 'NOT SET'));
+
+  // Check if the URL or API key is missing
+  if (empty($url) || empty($api_key)) {
+    \Drupal::logger('chargebee_portal')->error('Chargebee API URL or API Key is not set.');
+    return [
+      'success' => false,
+      'error_details' => 'Chargebee API URL or API Key is not configured.',
+    ];
+  }
+
+  // Encode the API key correctly
+  $authorization_header = 'Basic ' . base64_encode($api_key . ':');
+
+  // Prepare the data payload for the POST request
+  global $base_url;
+  $data = [
+    'redirectUrl' => $base_url . '/user',
+    'customer' => [
+      'id' => $chargebee_id,
+    ],
+  ];
+
+  // Set up the request options for the HTTP POST request
+  $options = [
+    'headers' => [
+      'Content-Type' => 'application/x-www-form-urlencoded',
+      'Authorization' => $authorization_header,
+    ],
+    'form_params' => $data,
+  ];
+
+  try {
+    // Send the POST request to Chargebee to create a new session
+    $response = \Drupal::httpClient()->post($url, $options);
+
+    if ($response->getStatusCode() == 200) {
+      $response_data = json_decode($response->getBody(), TRUE);
+
+      if (isset($response_data['portal_session'])) {
+        // Return the portal session data
+        return [
+          'success' => true,
+          'data' => $response_data['portal_session'],
+        ];
+      }
+    }
+    // Error handling for session creation failure
+    return [
+      'success' => false,
+      'error_details' => $response->getReasonPhrase(),
+    ];
+  } catch (RequestException $e) {
+    // Handle any request exceptions
+    \Drupal::logger('chargebee_portal')->error('RequestException: ' . $e->getMessage());
+    return [
+      'success' => false,
+      'error_details' => $e->getMessage(),
+    ];
+  }
+}
+
+
+
+
+
+
+
+function chargebee_portal_logout_previous_session($session_id) {
+  // Retrieve the Chargebee API key and URL for logout
+  $url = \Drupal::config('chargebee_portal.settings')->get('chargebee_live_logout_url') . '/' . $session_id;
+  $api_key = \Drupal::config('chargebee_portal.settings')->get('chargebee_live_api_key');
+
+  // Set up the request options
+  $authorization_header = 'Basic ' . base64_encode($api_key . ':');
+  $options = [
+    'headers' => [
+      'Content-Type' => 'application/x-www-form-urlencoded',
+      'Authorization' => $authorization_header,
+    ],
+  ];
+
+  try {
+    // Send the POST request to log out the previous session
+    $response = \Drupal::httpClient()->post($url, $options);
+
+    if ($response->getStatusCode() == 200) {
+      \Drupal::logger('chargebee_portal')->info('Previous session logged out: ' . $session_id);
+      return true;
+    } else {
+      \Drupal::logger('chargebee_portal')->error('Failed to log out previous session: ' . $session_id);
+      return false;
+    }
+
+  } catch (RequestException $e) {
+    \Drupal::logger('chargebee_portal')->error('RequestException during logout: ' . $e->getMessage());
+    return false;
+  }
+}
+
+
+

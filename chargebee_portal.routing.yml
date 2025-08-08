@@ -1,0 +1,16 @@
+chargebee_portal.settings:
+  path: '/admin/config/services/chargebee_portal'
+  defaults:
+    _form: '\Drupal\chargebee_portal\Form\ChargebeePortalSettingsForm'
+    _title: 'Chargebee Portal'
+  requirements:
+    _permission: 'administer site configuration'
+
+chargebee_portal.payment_portal:
+  path: '/payment-portal'
+  defaults:
+    _controller: '\chargebee_portal_payment_portal_redirect'  # Call global function directly
+  requirements:
+    _permission: 'access content'
+  options:
+    no_cache: TRUE

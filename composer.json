@@ -1,0 +1,6 @@
+{
+    "name": "makehaven/chargebee_portal",
+    "type": "drupal-custom-module",
+    "description": "Redirect users to the Chargebee payment portal.",
+    "license": "GPL-2.0-or-later"
+}
