@@ -2,42 +2,23 @@
 
 // Function for live environment settings
 function chargebee_portal_admin_settings($form, &$form_state) {
-  $config = \Drupal::config('chargebee_portal.settings');
   // Define the form for live environment settings
   $form['chargebee_live_api_key'] = array(
     '#type' => 'textfield',
     '#title' => t('Live API Key'),
-    '#default_value' => $config->get('chargebee_live_api_key'),
+    '#default_value' => variable_get('chargebee_live_api_key', ''),
   );
   $form['chargebee_live_portal_url'] = array(
     '#type' => 'textfield',
     '#title' => t('Live Portal URL'),
-    '#default_value' => $config->get('chargebee_live_portal_url'),
+    '#default_value' => variable_get('chargebee_live_portal_url', ''),
   );
 
-  $form['chargebee_test_api_key'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Test API Key'),
-    '#default_value' => $config->get('chargebee_test_api_key'),
-  );
-
-  $form['chargebee_test_portal_url'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Test Portal URL'),
-    '#default_value' => $config->get('chargebee_test_portal_url'),
-  );
-
-  $form['test_base_url'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Test Base URL'),
-    '#default_value' => $config->get('test_base_url'),
-  );
-
-  $form['fallback_payment_redirect_url'] = array(
+$form['fallback_payment_redirect_url'] = array(
     '#type' => 'textfield',
     '#title' => t('Fallback Payment Redirect URL'),
     '#description' => t('Enter the default URL for users who do not have a Chargebee ID or need to be redirected for other reasons.'),
-    '#default_value' => $config->get('fallback_payment_redirect_url'), // Default value
+    '#default_value' => variable_get('fallback_payment_redirect_url', 'https://yoursite.chargebeeportal.com/'), // Default value
     '#required' => TRUE,
 );
 
@@ -55,9 +36,6 @@ function chargebee_portal_admin_settings_submit($form, &$form_state) {
   \Drupal::configFactory()->getEditable('chargebee_portal.settings')
     ->set('chargebee_live_portal_url', $form_state['values']['chargebee_live_portal_url'])
     ->set('chargebee_live_api_key', $form_state['values']['chargebee_live_api_key'])
-    ->set('chargebee_test_portal_url', $form_state['values']['chargebee_test_portal_url'])
-    ->set('chargebee_test_api_key', $form_state['values']['chargebee_test_api_key'])
-    ->set('test_base_url', $form_state['values']['test_base_url'])
     ->set('fallback_payment_redirect_url', $form_state['values']['fallback_payment_redirect_url'])
     ->save();
   \Drupal::messenger()->addMessage(t('Configuration saved.'));

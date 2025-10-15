@@ -46,6 +46,30 @@ class ChargebeePortalSettingsForm extends ConfigFormBase {
       '#required' => TRUE,
     ];
 
+    $form['test_api_key'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Test API Key'),
+      '#description' => $this->t('Enter the test API key for Chargebee.'),
+      '#default_value' => $config->get('test_api_key'),
+      '#required' => TRUE,
+    ];
+
+    $form['test_portal_url'] = [
+      '#type' => 'url',
+      '#title' => $this->t('Test Portal URL'),
+      '#description' => $this->t('Enter the URL for the test Chargebee portal.'),
+      '#default_value' => $config->get('test_portal_url'),
+      '#required' => TRUE,
+    ];
+
+    $form['live_base_url'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Live Base URL'),
+      '#description' => $this->t('Enter the base URL of the live site.'),
+      '#default_value' => $config->get('live_base_url'),
+      '#required' => TRUE,
+    ];
+
     $form['fallback_payment_redirect_url'] = [
       '#type' => 'url',
       '#title' => $this->t('Fallback Payment Redirect URL'),
@@ -64,6 +88,9 @@ class ChargebeePortalSettingsForm extends ConfigFormBase {
     $this->config('chargebee_portal.settings')
       ->set('live_api_key', $form_state->getValue('live_api_key'))
       ->set('live_portal_url', $form_state->getValue('live_portal_url'))
+      ->set('test_api_key', $form_state->getValue('test_api_key'))
+      ->set('test_portal_url', $form_state->getValue('test_portal_url'))
+      ->set('live_base_url', $form_state->getValue('live_base_url'))
       ->set('fallback_payment_redirect_url', $form_state->getValue('fallback_payment_redirect_url'))
       ->save();
 

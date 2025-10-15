@@ -60,14 +60,18 @@ function chargebee_portal_payment_portal_redirect() {
 function chargebee_portal_create_session($chargebee_id) {
   $config = \Drupal::config('chargebee_portal.settings');
   $current_host = \Drupal::request()->getHost();
-  $test_base_url = $config->get('test_base_url');
+  $live_base_url = $config->get('live_base_url');
 
-  if ($current_host == $test_base_url) {
-    $url = $config->get('chargebee_test_portal_url');
-    $api_key = $config->get('chargebee_test_api_key');
+  // Normalize by removing www. from the beginning of the hostnames.
+  $normalized_current_host = preg_replace('/^www\./', '', $current_host);
+  $normalized_live_base_url = preg_replace('/^www\./', '', $live_base_url);
+
+  if ($normalized_current_host == $normalized_live_base_url) {
+    $url = $config->get('live_portal_url');
+    $api_key = $config->get('live_api_key');
   } else {
-    $url = $config->get('chargebee_live_portal_url');
-    $api_key = $config->get('chargebee_live_api_key');
+    $url = $config->get('test_portal_url');
+    $api_key = $config->get('test_api_key');
   }
 
   // Check if the URL or API key is missing
