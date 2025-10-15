@@ -58,12 +58,17 @@ function chargebee_portal_payment_portal_redirect() {
  * Create a Chargebee portal session.
  */
 function chargebee_portal_create_session($chargebee_id) {
-  // Retrieve the correct API URL and key from the configuration
-  $url = \Drupal::config('chargebee_portal.settings')->get('live_portal_url');
-  $api_key = \Drupal::config('chargebee_portal.settings')->get('live_api_key');
+  $config = \Drupal::config('chargebee_portal.settings');
+  $current_host = \Drupal::request()->getHost();
+  $test_base_url = $config->get('test_base_url');
 
-  // Log the API URL and key to verify if they are being retrieved correctly
- // \Drupal::logger('chargebee_portal')->info('Chargebee API URL: ' . ($url ? $url : 'NOT SET') . ', API Key: ' . ($api_key ? $api_key : 'NOT SET'));
+  if ($current_host == $test_base_url) {
+    $url = $config->get('chargebee_test_portal_url');
+    $api_key = $config->get('chargebee_test_api_key');
+  } else {
+    $url = $config->get('chargebee_live_portal_url');
+    $api_key = $config->get('chargebee_live_api_key');
+  }
 
   // Check if the URL or API key is missing
   if (empty($url) || empty($api_key)) {
