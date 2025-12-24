@@ -1,6 +1,6 @@
 name: Chargebee Portal
 description: Redirect users to the Chargebee payment portal.
 type: module
-core_version_requirement: ^10
+core_version_requirement: ^10 || ^11
 package: Custom
 version: 1.0
