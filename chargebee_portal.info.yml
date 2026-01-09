@@ -2,5 +2,6 @@ name: Chargebee Portal
 description: Redirect users to the Chargebee payment portal.
 type: module
 core_version_requirement: ^10 || ^11
-package: Custom
+package: Makerspace
 version: '1.0'
+configure: chargebee_portal.settings
